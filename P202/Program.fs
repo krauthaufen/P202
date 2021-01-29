@@ -93,7 +93,7 @@ module P202 =
                     
                     // count "1" pixels in border
                     let mutable gain = 0
-                    mat.[l, box.Min.Y .. box.Max.Y] |> NativeVector.iter (fun _ a -> if a > 127uy then gain <- gain + 1)
+                    mat.[l, box.Min.Y .. box.Max.Y] |> NativeVector.iter (fun _ a -> if a < 127uy then gain <- gain + 1)
 
                     // add alternative
                     alternatives <- (gain, Box2i(box.Min - V2i.IO, box.Max)) :: alternatives
@@ -106,7 +106,7 @@ module P202 =
 
                     // count "1" pixels in border
                     let mutable gain = 0
-                    mat.[r, box.Min.Y .. box.Max.Y] |> NativeVector.iter (fun _ a -> if a > 127uy then gain <- gain + 1)
+                    mat.[r, box.Min.Y .. box.Max.Y] |> NativeVector.iter (fun _ a -> if a < 127uy then gain <- gain + 1)
                 
                     // add alternative
                     alternatives <- (gain, Box2i(box.Min, box.Max + V2i.IO)) :: alternatives
@@ -119,7 +119,7 @@ module P202 =
                     
                     // count "1" pixels in border
                     let mutable gain = 0
-                    mat.[box.Min.X .. box.Max.X, b] |> NativeVector.iter (fun _ a -> if a > 127uy then gain <- gain + 1)
+                    mat.[box.Min.X .. box.Max.X, b] |> NativeVector.iter (fun _ a -> if a < 127uy then gain <- gain + 1)
                 
                     // add alternative
                     alternatives <- (gain, Box2i(box.Min - V2i.OI, box.Max)) :: alternatives
@@ -131,7 +131,7 @@ module P202 =
                     
                     // count "1" pixels in border
                     let mutable gain = 0
-                    mat.[box.Min.X .. box.Max.X, t] |> NativeVector.iter (fun _ a -> if a > 127uy then gain <- gain + 1)
+                    mat.[box.Min.X .. box.Max.X, t] |> NativeVector.iter (fun _ a -> if a < 127uy then gain <- gain + 1)
                 
                     // add alternative
                     alternatives <- (gain, Box2i(box.Min, box.Max + V2i.OI)) :: alternatives
@@ -160,6 +160,7 @@ module P202 =
                         // multiple best alternatives
                         // => randomly choose one
                         let _, randomBox = optimal.[rand.UniformInt optimal.Length]
+                        inside <- inside + bestGain
                         box <- randomBox
 
 
@@ -179,7 +180,7 @@ module P202 =
                 //Log.startTimed "growing"
                 while iters < iterations do
                     let px = rand.UniformV2i s
-                    if pBinary.[px] > 127uy then
+                    if pBinary.[px] < 127uy then
                         match grow quadSize px pBinary with
                         | Some (cnt, box) -> 
                             if cnt > bestCnt then
@@ -223,7 +224,7 @@ module P202 =
                     let b = Box2i(c - half, c + upperHalf)
                     let quad = pBinary.[b.Min.X .. b.Max.X, b.Min.Y .. b.Max.Y]
                     let mutable cnt = 0
-                    quad |> NativeMatrix.iter (fun _ v -> if v > 127uy then cnt <- cnt + 1)
+                    quad |> NativeMatrix.iter (fun _ v -> if v < 127uy then cnt <- cnt + 1)
                     if cnt > bestCount then
                         bestCount <- cnt
                         bestBox <- b

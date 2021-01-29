@@ -2,7 +2,7 @@
   "profiles": {
     "P202": {
       "commandName": "Project",
-      "commandLineArgs": "C:\\Users\\Schorsch\\Desktop\\test.png -o C:\\Users\\Schorsch\\Desktop\\quad.png -i 100 -s 100"
+      "commandLineArgs": "\"C:\\Users\\Schorsch\\Downloads\\ohneluftsimpel.tif\" -o C:\\Users\\Schorsch\\Desktop\\quad.png -i 10000 -s 15"
     }
   }
 }
