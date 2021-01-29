@@ -213,7 +213,7 @@ module P202 =
 
         NativeMatrix.using binary (fun pBinary ->
             let mutable bestCount = 0
-            let mutable bestBox = Box2i.Invalid
+            let mutable bestBoxes = []
 
             let total = (1 + u.X - l.X) * (1 + u.Y - l.Y)
             let mutable i = 0
@@ -227,14 +227,17 @@ module P202 =
                     quad |> NativeMatrix.iter (fun _ v -> if v < 127uy then cnt <- cnt + 1)
                     if cnt > bestCount then
                         bestCount <- cnt
-                        bestBox <- b
+                        bestBoxes <- [b]
+                    elif cnt = bestCount then
+                        bestBoxes <- b :: bestBoxes
+                            
 
                     i <- i + 1
                     Report.Progress(float i / float total)
             //Log.stop()
 
-            let porosity = float bestCount / float (sx bestBox * sy bestBox)
-            bestBox, porosity
+            let porosity = float bestCount / float (quadSize * quadSize)
+            bestBoxes, porosity
 
         )
 
@@ -324,30 +327,45 @@ let main argv =
         Log.line "%.2f%%" (100.0 * growingPorosity)
         Log.stop()
 
-        let bruteForceBox = 
+        // brute-force approach
+        let bruteForceBoxes = 
             if not args.skipBruteForce then
                 // brute force approach (for reference)
                 Log.startTimed "brute force"
                 // known values for test image (takes about 4min to compute)
                 //let bruteForceBox = Box2i(V2i(60, 632), V2i(414, 986))
                 //let bruteForcePorosity = 0.1825
-                let bruteForceBox, bruteForcePorosity = P202.bruteForce args.quadSize binary
-                Log.line "%A" bruteForceBox
-                Log.line "%.2f%%" (100.0 * bruteForcePorosity)
-                Log.stop()
-                Some bruteForceBox
+                let bruteForceBoxes, bruteForcePorosity = P202.bruteForce args.quadSize binary
+                match bruteForceBoxes with
+                | bruteForceBox :: _ ->
+                    Log.line "%A" bruteForceBox
+                    Log.line "%.2f%%" (100.0 * bruteForcePorosity)
+                    Log.stop()
+                    bruteForceBoxes
+                | _ ->
+                    Log.warn "no boxes found"
+                    Log.stop()
+                    []
             else
-                None
+                []
 
-        Log.start "writing output"
+        // check if growing-result is in the optimal results.
+        if not args.skipBruteForce then
+            let exists = bruteForceBoxes |> List.exists (fun b -> b = growingBox)
+            if exists then Report.WarnNoPrefix "growing result is optimal"
+            else Report.WarnNoPrefix "growing result is not optimal"
+
+
         // draw and save the result
+        Log.start "writing output"
         let res = PixImage<byte>(Col.Format.RGBA, V2i binary.Size)
         let m = res.GetMatrix<C4b>()
         m.SetMap(binary, fun v -> C4b(v,v,v,255uy)) |> ignore
         m.SetRectangle(growingBox.Min, growingBox.Max, C4b.Green)
-        match bruteForceBox with
-        | Some bruteForceBox -> m.SetRectangle(bruteForceBox.Min, bruteForceBox.Max, C4b.Red)
+        match bruteForceBoxes with
+        | bruteForceBox :: _ -> m.SetRectangle(bruteForceBox.Min, bruteForceBox.Max, C4b.Red)
         | _ -> ()
         res.SaveAsImage args.outputFile
         Log.stop()
+
         0
