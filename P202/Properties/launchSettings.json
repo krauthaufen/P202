@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "P202": {
+      "commandName": "Project",
+      "commandLineArgs": "C:\\Users\\Schorsch\\Desktop\\test.png -o C:\\Users\\Schorsch\\Desktop\\quad.png -i 100 -s 100"
+    }
+  }
+}
